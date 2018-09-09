@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 
-""" Rainbow SQL """
+""" Styles """
 
 from pygments.lexers.sql import SqlLexer
+from pygments.styles import get_style_by_name
 
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.styles import style_from_pygments_cls
 
 
 def main():
+    style = get_style_by_name("monokai")
     history = FileHistory(".mee_history")
     session = PromptSession(
         " >>> ",
         history=history,
         lexer=PygmentsLexer(SqlLexer),
+        style=style_from_pygments_cls(style),
     )
     while True:
         try:
