@@ -2,7 +2,9 @@
 
 """ Bottom toolbar """
 
+import functools
 import json
+import operator
 import time
 
 from pygments.lexers.sql import SqlLexer
@@ -43,11 +45,36 @@ def query(stmt):
     except FileNotFoundError:
         return
 
+    checks = {}
+    cond = stmt.get("condition")
+    if cond:
+        if cond["op"] == '=':
+            op = operator.eq
+        elif cond["op"] == '!=':
+            op = operator.eq
+
+        checks[cond["args"][0]["value"]] = functools.partial(
+            op,
+            cond["args"][1]["value"],
+        )
+
     for row in table.values():
-        yield {
-            column["value"]: row[column["value"]]
-            for column in stmt["columns"]
-        }
+        result = {}
+        for column in stmt["columns"]:
+            colname = column["value"]
+            try:
+                colvalue = row[colname]
+            except KeyError:
+                continue
+
+            check = checks.get(colname)
+            if check and not check(colvalue):
+                break
+
+            result[colname] = colvalue
+        else:
+            if result:
+                yield result
 
 
 def validate(text):
