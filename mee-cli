@@ -1,14 +1,21 @@
 #!/usr/bin/env python
 
-""" TODAY: We write history (into files) """
+""" Rainbow SQL """
 
+from pygments.lexers.sql import SqlLexer
+
+from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.shortcuts import PromptSession
 from prompt_toolkit.history import FileHistory
 
 
 def main():
     history = FileHistory(".mee_history")
-    session = PromptSession(" >>> ", history=history)
+    session = PromptSession(
+        " >>> ",
+        history=history,
+        lexer=PygmentsLexer(SqlLexer),
+    )
     while True:
         try:
             stmt = session.prompt()
