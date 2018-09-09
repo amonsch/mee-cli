@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
-""" Minimalistic prompt """
+""" Features: Session + REPL """
 
-from prompt_toolkit import prompt
+from prompt_toolkit.shortcuts import PromptSession
 
 
 def main():
-    stmt = prompt("Give me some input:\n >>> ")
-    print(f"You said: {stmt}")
+    session = PromptSession(" >>> ")
+    while True:
+        try:
+            stmt = session.prompt()
+            print(f"You said: {stmt}")
+        except EOFError:
+            break
 
 
 if __name__ == "__main__":
