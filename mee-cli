@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" JSON Table """
+""" Output to table """
 
 import json
 
@@ -13,6 +13,8 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.validation import Validator, ValidationError
+
+import tabulate
 
 import sql_mojo_parser as parser
 
@@ -78,7 +80,13 @@ def main():
             parsed = parser.yacc.parse(stmt)
             result = list(query(parsed))
             if result:
-                print(json.dumps(result, indent=2))
+                print(
+                    tabulate.tabulate(
+                        [row.values() for row in result],  # data
+                        result[0].keys(),                  # header
+                        tablefmt="psql",
+                    )
+                )
             else:
                 print("No results found")
         except EOFError:
