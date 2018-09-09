@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
-""" Features: Session + REPL """
+""" TODAY: We write history (into files) """
 
 from prompt_toolkit.shortcuts import PromptSession
+from prompt_toolkit.history import FileHistory
 
 
 def main():
-    session = PromptSession(" >>> ")
+    history = FileHistory(".mee_history")
+    session = PromptSession(" >>> ", history=history)
     while True:
         try:
             stmt = session.prompt()
