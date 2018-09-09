@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-""" Validate SQL """
+""" JSON Table """
+
+import json
 
 from pygments.lexers.sql import SqlLexer
 from pygments.styles import get_style_by_name
@@ -18,6 +20,31 @@ import sql_mojo_parser as parser
 KEYWORDS = [
     "SELECT", "FROM", "WHERE", "GROUP", "ORDER BY", "LIMIT",  # ... etc.
 ]
+
+
+def load_linewise_json(filename):
+    table = {}
+    with open(filename, mode="r") as jsonfile:
+        for line in jsonfile:
+            row = json.loads(line)
+            table[row["id"]] = row
+
+    return table
+
+
+def query(stmt):
+    assert stmt["type"] == "select"
+
+    try:
+        table = load_linewise_json(stmt["table"]["value"])
+    except FileNotFoundError:
+        return
+
+    for row in table.values():
+        yield {
+            column["value"]: row[column["value"]]
+            for column in stmt["columns"]
+        }
 
 
 def validate(text):
@@ -47,8 +74,13 @@ def main():
     )
     while True:
         try:
-            session.prompt()
-            print(f"Your statement seems legit!")
+            stmt = session.prompt()
+            parsed = parser.yacc.parse(stmt)
+            result = list(query(parsed))
+            if result:
+                print(json.dumps(result, indent=2))
+            else:
+                print("No results found")
         except EOFError:
             break
 
