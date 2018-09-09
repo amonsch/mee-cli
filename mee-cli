@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-""" Output to table """
+""" Bottom toolbar """
 
 import json
+import time
 
 from pygments.lexers.sql import SqlLexer
 from pygments.styles import get_style_by_name
@@ -60,10 +61,19 @@ def validate(text):
         raise ValidationError(message="Your SQL is WRONG!!")
 
 
+class Toolbar:
+    def __init__(self, text):
+        self.text = text
+
+    def __call__(self):
+        return self.text
+
+
 def main():
     completer = WordCompleter(KEYWORDS, ignore_case=True)
     style = get_style_by_name("monokai")
     history = FileHistory(".mee_history")
+    toolbar = Toolbar("Inital toolbar Text")
     session = PromptSession(
         " >>> ",
         history=history,
@@ -73,12 +83,16 @@ def main():
         complete_while_typing=False,
         validator=Validator.from_callable(validate),
         validate_while_typing=False,
+        bottom_toolbar=toolbar,
     )
     while True:
         try:
             stmt = session.prompt()
+            timing = time.time()
             parsed = parser.yacc.parse(stmt)
             result = list(query(parsed))
+            timing = (time.time() - timing) * 1000
+
             if result:
                 print(
                     tabulate.tabulate(
@@ -87,8 +101,9 @@ def main():
                         tablefmt="psql",
                     )
                 )
-            else:
-                print("No results found")
+
+            hits = result and len(result) or 0
+            toolbar.text = f" -- Result count: {hits} -- took: {timing:.2f} ms"
         except EOFError:
             break
 
