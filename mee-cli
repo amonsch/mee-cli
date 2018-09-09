@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-""" Bottom toolbar """
+""" The last page """
 
+import contextlib
 import functools
 import json
 import operator
+import subprocess
 import time
 
 from pygments.lexers.sql import SqlLexer
@@ -96,6 +98,27 @@ class Toolbar:
         return self.text
 
 
+@contextlib.contextmanager
+def pager(command="less", options=None):
+    # Pager Options:
+    # -F: Quit less if the entire content can be displayed on the first
+    #     page.
+    # -R: Display raw control characters.
+    # -S: Disable line wrapping.
+    # -X: Avoid clearing the screen on de-initialization. This in
+    #     combination with the -F option allows a content sensitive
+    #     triggering of less.
+    command_list = [command]
+    if options:
+        command_list.extend([options])
+    pager = subprocess.Popen(command_list, stdin=subprocess.PIPE)
+
+    yield pager.stdin
+
+    pager.stdin.close()
+    pager.wait()
+
+
 def main():
     completer = WordCompleter(KEYWORDS, ignore_case=True)
     style = get_style_by_name("monokai")
@@ -121,13 +144,14 @@ def main():
             timing = (time.time() - timing) * 1000
 
             if result:
-                print(
-                    tabulate.tabulate(
-                        [row.values() for row in result],  # data
-                        result[0].keys(),                  # header
-                        tablefmt="psql",
+                with pager(options="-FRSX") as less:
+                    less.write(
+                        tabulate.tabulate(
+                            [row.values() for row in result],  # data
+                            result[0].keys(),                  # header
+                            tablefmt="psql",
+                        ).encode("utf-8")
                     )
-                )
 
             hits = result and len(result) or 0
             toolbar.text = f" -- Result count: {hits} -- took: {timing:.2f} ms"
