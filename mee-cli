@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Auto Suggest """
+""" Key bindings """
 
 import contextlib
 import functools
@@ -19,6 +19,7 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.key_binding import KeyBindings
 
 import tabulate
 
@@ -28,6 +29,8 @@ import sql_mojo_parser as parser
 KEYWORDS = [
     "SELECT", "FROM", "WHERE", "GROUP", "ORDER BY", "LIMIT",  # ... etc.
 ]
+
+bindings = KeyBindings()
 
 
 def load_linewise_json(filename):
@@ -120,6 +123,11 @@ def pager(command="less", options=None):
     pager.wait()
 
 
+@bindings.add("c-q")
+def quit(event):
+    event.app.exit()
+
+
 def main():
     completer = WordCompleter(KEYWORDS, ignore_case=True)
     style = get_style_by_name("monokai")
@@ -136,10 +144,15 @@ def main():
         validate_while_typing=False,
         bottom_toolbar=toolbar,
         auto_suggest=AutoSuggestFromHistory(),
+        key_bindings=bindings,
     )
     while True:
         try:
             stmt = session.prompt()
+            if not stmt:
+                print("Good Bye!")
+                break
+
             timing = time.time()
             parsed = parser.yacc.parse(stmt)
             result = list(query(parsed))
